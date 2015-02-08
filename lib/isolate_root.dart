@@ -1,7 +1,11 @@
 part of duct_tape;
 
 class IsolateRoot {
+  /**
+   * Receiving port of spawned isolate. Used to send messages to it.
+   */
   SendPort _sendPort;
+
   Function _onMessage = () {};
 
   void spawn(IsolateWrapper worker) {
@@ -29,5 +33,14 @@ class IsolateRoot {
    */
   void listen(onMessage(message)) {
     _onMessage = onMessage;
+  }
+
+  /**
+   * Sends message to isolate.
+   */
+  void send(message) {
+    _sendPort.send({
+      'message': message
+    });
   }
 }

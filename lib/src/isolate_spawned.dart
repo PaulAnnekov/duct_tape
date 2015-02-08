@@ -3,8 +3,10 @@ part of duct_tape;
 class IsolateSpawned {
   SendPort _sendPort;
 
-  // TODO: allow multiple requests.
-  Completer _request;
+  /**
+   * Called on each message received from root isolate.
+   */
+  Function _onMessage;
 
   Map<int, Completer> _requests = {};
 
@@ -19,9 +21,18 @@ class IsolateSpawned {
     var port = new ReceivePort();
     _sendPort.send(port.sendPort);
 
-    port.listen((var message) {
-      _requests[message['id']].complete(message['message']);
-      _requests.remove(message['id']);
+    port.listen((Map message) {
+      if(!message.containsKey('id')) {
+        if(_onMessage == null) {
+          throw new Exception('Message was sent by root but child does not '
+          'listen for messages');
+        }
+
+        _onMessage(message['message']);
+      } else {
+        _requests[message['id']].complete(message['message']);
+        _requests.remove(message['id']);
+      }
     });
   }
 
@@ -56,5 +67,9 @@ class IsolateSpawned {
     _lastKey++;
 
     return request.future;
+  }
+
+  void listen(Function onMessage) {
+    _onMessage = onMessage;
   }
 }
