@@ -22,16 +22,24 @@ class IsolateSpawned {
     _sendPort.send(port.sendPort);
 
     port.listen((Map message) {
-      if(!message.containsKey('id')) {
+      if(message['type'] == MessageType.REQUEST) {
         if(_onMessage == null) {
           throw new Exception('Message was sent by root but child does not '
           'listen for messages');
         }
 
-        _onMessage(message['message']);
-      } else {
-        _requests[message['id']].complete(message['message']);
+        _onMessage(message['message']).then((response) {
+          _sendPort.send({
+            'id': message['id'],
+            'type': MessageType.RESPONSE,
+            'data': response
+          });
+        });
+      } else if (message['type'] == MessageType.RESPONSE) {
+        _requests[message['id']].complete(message['data']);
         _requests.remove(message['id']);
+      } else {
+        throw new Exception('Unknown message type: $message');
       }
     });
   }
@@ -60,7 +68,8 @@ class IsolateSpawned {
 
     _sendPort.send({
       'id': _lastKey,
-      'message': message
+      'type': MessageType.REQUEST,
+      'data': message
     });
 
     _requests[_lastKey] = request;
@@ -69,7 +78,11 @@ class IsolateSpawned {
     return request.future;
   }
 
-  void listen(Function onMessage) {
+  /**
+   * Listen for incoming requests from root isolate. [onMessage] will be called
+   * on each request from root.
+   */
+  void listen(Future onMessage(dynamic data)) {
     _onMessage = onMessage;
   }
 }

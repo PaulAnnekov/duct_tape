@@ -1,5 +1,7 @@
 part of duct_tape;
 
+enum MessageType { REQUEST, RESPONSE }
+
 class IsolateRoot {
   /**
    * Receiving port of spawned isolate. Used to send messages to it.
@@ -7,6 +9,10 @@ class IsolateRoot {
   SendPort _sendPort;
 
   Function _onMessage = () {};
+
+  Map<int, Completer> _requests = {};
+
+  int _lastKey = 0;
 
   void spawn(IsolateWrapper worker) {
     ReceivePort receivePort = new ReceivePort();
@@ -18,11 +24,17 @@ class IsolateRoot {
     receivePort.listen((var message) {
       if(message is SendPort) {
         _sendPort = message;
-      } else {
+      } else if (message['type'] == MessageType.REQUEST) {
         _sendPort.send({
           'id': message['id'],
-          'message': _onMessage(message['message'])
+          'type': MessageType.RESPONSE,
+          'data': _onMessage(message['data'])
         });
+      } else if (message['type'] == MessageType.RESPONSE) {
+        _requests[message['id']].complete(message['data']);
+        _requests.remove(message['id']);
+      } else {
+        throw new Exception('Unknown message type: $message');
       }
     });
   }
@@ -38,9 +50,18 @@ class IsolateRoot {
   /**
    * Sends message to isolate.
    */
-  void send(message) {
+  Future<dynamic> send(message) {
+    Completer request = new Completer();
+
     _sendPort.send({
-      'message': message
+      'id': _lastKey,
+      'type': MessageType.REQUEST,
+      'data': message
     });
+
+    _requests[_lastKey] = request;
+    _lastKey++;
+
+    return request.future;
   }
 }

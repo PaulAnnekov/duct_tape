@@ -4,4 +4,4 @@ description: A handy wrapper over isolates.
 author: Paul Annekov <paul.annekov@gmail.com>
 homepage: https://github.com/PaulAnnekov/duct_tape
 environment:
-  sdk: ">=1.0.0"
+  sdk: ">=1.8.0"

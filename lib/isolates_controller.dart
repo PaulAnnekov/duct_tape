@@ -3,7 +3,9 @@ part of duct_tape;
 class IsolatesController {
   Function _onMessage = () {};
 
-  List<IsolateRoot> _isolates = new List<IsolateRoot>();
+  List<Map> _isolates = new List<Map>();
+
+  Queue<Map> _tasks = new Queue();
 
   spawn(IsolateWrapper base, [int count = 1]) {
     for(var i = 0; i < count; i++) {
@@ -13,7 +15,10 @@ class IsolatesController {
         return _onMessage(message);
       });
 
-      _isolates.add(rootIsolate);
+      _isolates.add({
+        'isolate': rootIsolate,
+        'is_busy': false
+      });
     }
   }
 
@@ -25,11 +30,41 @@ class IsolatesController {
   }
 
   /**
+   * Tries to run queued task in free isolate.
+   */
+  _runTasks() {
+    if(_tasks.isEmpty)
+      return;
+
+    Map isolate = _isolates.firstWhere((Map isolate) =>
+        isolate['is_busy'] == false, orElse: () => null);
+
+    if(isolate == null)
+      return;
+
+    isolate['is_busy'] = true;
+
+    Map task = _tasks.removeFirst();
+
+    (isolate['isolate'] as IsolateRoot).send(task['task']).then((data) {
+      isolate['is_busy'] = false;
+      (task['completer'] as Completer).complete(data);
+      _runTasks();
+    });
+  }
+
+  /**
    * Sends message to isolates.
    */
-  void send(message) {
-    _isolates.forEach((IsolateRoot isolate) {
-      isolate.send(message);
+  Future<dynamic> send(message) {
+    Completer completer = new Completer();
+    _tasks.add({
+      'completer': completer,
+      'task': message
     });
+
+    _runTasks();
+
+    return completer.future;
   }
 }
