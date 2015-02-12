@@ -5,14 +5,16 @@ class IsolatesController {
 
   List<IsolateRoot> _isolates = new List<IsolateRoot>();
 
-  spawn(IsolateWrapper base) {
-    IsolateRoot rootIsolate = new IsolateRoot();
-    rootIsolate.spawn(base);
-    rootIsolate.listen((message) {
-      return _onMessage(message);
-    });
+  spawn(IsolateWrapper base, [int count = 1]) {
+    for(var i = 0; i < count; i++) {
+      IsolateRoot rootIsolate = new IsolateRoot();
+      rootIsolate.spawn(base);
+      rootIsolate.listen((message) {
+        return _onMessage(message);
+      });
 
-    _isolates.add(rootIsolate);
+      _isolates.add(rootIsolate);
+    }
   }
 
   /**
