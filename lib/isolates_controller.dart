@@ -7,10 +7,12 @@ class IsolatesController {
 
   Queue<Map> _tasks = new Queue();
 
-  spawn(IsolateWrapper base, [int count = 1]) {
+  Future spawn(IsolateWrapper base, [int count = 1]) {
+    List<Future> futures = new List();
+
     for(var i = 0; i < count; i++) {
       IsolateRoot rootIsolate = new IsolateRoot();
-      rootIsolate.spawn(base);
+      futures.add(rootIsolate.spawn(base));
       rootIsolate.listen((message) {
         return _onMessage(message);
       });
@@ -20,6 +22,8 @@ class IsolatesController {
         'is_busy': false
       });
     }
+
+    return Future.wait(futures);
   }
 
   /**

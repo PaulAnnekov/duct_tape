@@ -14,7 +14,8 @@ class IsolateRoot {
 
   int _lastKey = 0;
 
-  void spawn(IsolateWrapper worker) {
+  Future spawn(IsolateWrapper worker) {
+    Completer completer = new Completer();
     ReceivePort receivePort = new ReceivePort();
     Isolate.spawn(IsolateSpawned.run, {
         'sendPort': receivePort.sendPort,
@@ -24,19 +25,22 @@ class IsolateRoot {
     receivePort.listen((var message) {
       if(message is SendPort) {
         _sendPort = message;
-      } else if (message['type'] == MessageType.REQUEST) {
+        completer.complete();
+      } else if (message['type'] == 'request') {
         _sendPort.send({
           'id': message['id'],
-          'type': MessageType.RESPONSE,
+          'type': 'response',
           'data': _onMessage(message['data'])
         });
-      } else if (message['type'] == MessageType.RESPONSE) {
+      } else if (message['type'] == 'response') {
         _requests[message['id']].complete(message['data']);
         _requests.remove(message['id']);
       } else {
         throw new Exception('Unknown message type: $message');
       }
     });
+
+    return completer.future;
   }
 
   /**
@@ -55,7 +59,7 @@ class IsolateRoot {
 
     _sendPort.send({
       'id': _lastKey,
-      'type': MessageType.REQUEST,
+      'type': 'request',
       'data': message
     });
 
