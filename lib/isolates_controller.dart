@@ -54,6 +54,21 @@ class IsolatesController {
   }
 
   /**
+   * Checks if all isolates are free.
+   */
+  int freeCount() {
+    int freeCount = 0;
+
+    _isolates.forEach((Map isolate) {
+      if(isolate['is_busy'] == false) {
+        freeCount++;
+      }
+    });
+
+    return freeCount;
+  }
+
+  /**
    * Sends message to isolates.
    */
   Future<dynamic> send(message) {
