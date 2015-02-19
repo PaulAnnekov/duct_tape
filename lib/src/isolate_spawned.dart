@@ -12,7 +12,9 @@ class IsolateSpawned {
 
   int _lastKey = 0;
 
-  IsolateSpawned(this._sendPort);
+  int isolateId;
+
+  IsolateSpawned(this._sendPort, this.isolateId);
 
   /**
    * Exchange ports between current isolate and root.
@@ -55,7 +57,7 @@ class IsolateSpawned {
    * Entry point for new isolate.
    */
   static run(Map data) {
-    IsolateSpawned isolate = new IsolateSpawned(data['sendPort']);
+    IsolateSpawned isolate = new IsolateSpawned(data['sendPort'], data['isolateId']);
     isolate._exchangePorts();
     isolate._startWorker(data['worker']);
   }

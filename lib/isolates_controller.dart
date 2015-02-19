@@ -12,7 +12,7 @@ class IsolatesController {
 
     for(var i = 0; i < count; i++) {
       IsolateRoot rootIsolate = new IsolateRoot();
-      futures.add(rootIsolate.spawn(base));
+      futures.add(rootIsolate.spawn(base, _isolates.length));
       rootIsolate.listen((message) {
         return _onMessage(message);
       });

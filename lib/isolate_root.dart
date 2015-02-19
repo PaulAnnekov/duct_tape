@@ -14,12 +14,13 @@ class IsolateRoot {
 
   int _lastKey = 0;
 
-  Future spawn(IsolateWrapper worker) {
+  Future spawn(IsolateWrapper worker, int isolateId) {
     Completer completer = new Completer();
     ReceivePort receivePort = new ReceivePort();
     Isolate.spawn(IsolateSpawned.run, {
-        'sendPort': receivePort.sendPort,
-        'worker': worker
+      'sendPort': receivePort.sendPort,
+      'worker': worker,
+      'isolateId': isolateId
     });
 
     receivePort.listen((var message) {
